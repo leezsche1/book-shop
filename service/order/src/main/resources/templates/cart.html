@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+<body>
+
+<h2>장바구니</h2>
+
+<!-- 고정된 책 목록 (예시) -->
+<div>
+    <div>책1: 클린 코드 (productId=101, 수량=1, 가격=15000)</div>
+    <div>책2: 이펙티브 자바 (productId=102, 수량=2, 가격=20000)</div>
+</div>
+
+<hr />
+
+<div>사용할 포인트: 500</div>
+
+<hr />
+
+<button id="orderBtn">주문하기</button>
+
+<script>
+    const usePoint = 500;
+
+    const items = [
+      { bookId: 1, quantity: 1 },
+      { bookId: 2, quantity: 2 }
+    ];
+
+    // 자동 계산: 상품합
+    const sum =
+      items[0].quantity * 15000 +
+      items[1].quantity * 20000;
+
+    const payload = {
+      usePoint: usePoint,
+      priceAmount: sum,
+      orderItems: items
+    };
+
+    document.getElementById("orderBtn").addEventListener("click", async () => {
+      const res = await fetch("/api/createOrder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        alert("주문 생성 실패");
+        return;
+      }
+
+      window.location.href =
+        "/checkout?orderId=" + json.orderId + "&totalPrice=" + json.totalPrice;
+    });
+</script>
+
+</body>
+</html>
