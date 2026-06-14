@@ -15,6 +15,8 @@ public class Order {
     private Long usePoint;
     private Long totalPrice;
 
+    private Long userId;
+
     @Setter
     private String paymentKey;
 
@@ -25,11 +27,12 @@ public class Order {
         this.status = OrderStatus.CREATED;
     }
 
-    public Order(Long orderId, Long priceAmount, Long usePoint) {
+    public Order(Long orderId, Long priceAmount, Long usePoint, Long userId) {
         this.id = orderId;
         this.priceAmount = priceAmount;
         this.usePoint = usePoint;
         this.totalPrice = priceAmount - usePoint;
+        this.userId = userId;
         this.status = OrderStatus.CREATED;
     }
 

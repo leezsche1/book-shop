@@ -24,7 +24,7 @@ public class BookService {
     @Transactional
     public BookReserveResultDTO tryReserve(BookReserveDTO bookReserveDTO) {
 
-        List<BookReservation> result = bookReservationRepository.findAllByOrderId(bookReserveDTO.getRequestId());
+        List<BookReservation> result = bookReservationRepository.findAllByRequestId(bookReserveDTO.getRequestId());
 
         if (!result.isEmpty()) {
             Long totalPrice = result.stream().mapToLong(BookReservation::getReservedPrice).sum();
@@ -60,7 +60,7 @@ public class BookService {
 
     @Transactional
     public void confirmReserve(BookReserveConfirmDTO bookReserveConfirmDTO) {
-        List<BookReservation> result = bookReservationRepository.findAllByOrderId(bookReserveConfirmDTO.getRequestId());
+        List<BookReservation> result = bookReservationRepository.findAllByRequestId(bookReserveConfirmDTO.getRequestId());
 
         if (result.isEmpty()) {
             throw new RuntimeException("예약된 정보가 없어요.");
@@ -87,7 +87,7 @@ public class BookService {
 
     @Transactional
     public void cancelReserve(BookReserveCancelDTO bookReserveCancelDTO) {
-        List<BookReservation> result = bookReservationRepository.findAllByOrderId(bookReserveCancelDTO.getRequestId());
+        List<BookReservation> result = bookReservationRepository.findAllByRequestId(bookReserveCancelDTO.getRequestId());
 
         if (result.isEmpty()) {
             throw new RuntimeException("예약된 정보가 없어요.");

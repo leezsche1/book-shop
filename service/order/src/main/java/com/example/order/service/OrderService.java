@@ -11,9 +11,11 @@ import com.example.order.api.point.dto.PointReserveCancelApiRequestDTO;
 import com.example.order.api.point.dto.PointReserveConfirmApiRequestDTO;
 import com.example.order.domain.Order;
 import com.example.order.domain.OrderItem;
+import com.example.order.kafka.event.OrderConfirmedEvent;
+import com.example.order.kafka.producer.OrderEventProducer;
 import com.example.order.repository.OrderItemRepository;
 import com.example.order.repository.OrderRepository;
-import com.example.order.tossController.dto.ConfirmPaymentRequestDTO;
+//import com.example.order.tossController.dto.ConfirmPaymentRequestDTO;
 import com.example.order.service.dto.CreateOrderDTO;
 import com.example.order.service.dto.CreateOrderResultDTO;
 import com.example.order.service.dto.TossConfirmRequestDTO;
@@ -43,14 +45,17 @@ public class OrderService {
 
     private final Snowflake snowflake;
 
-    @Value("${toss.secret-key}")
-    private String secretKey;
+    private final OrderEventProducer orderEventProducer;
+
+//    @Value("${toss.secret-key}")
+//    private String secretKey;
 
 
     @Transactional
     public CreateOrderResultDTO createOrder(CreateOrderDTO createOrderDTO) {
         Order order = orderRepository.save(
-                new Order(snowflake.nextId(), createOrderDTO.getPriceAmount(), createOrderDTO.getUsePoint())
+                new Order(snowflake.nextId(), createOrderDTO.getPriceAmount(), createOrderDTO.getUsePoint(),
+                        createOrderDTO.getUserId())
         );
 
         List<OrderItem> orderItems = createOrderDTO.getOrderItems().stream().map(
@@ -126,58 +131,75 @@ public class OrderService {
 
             confirm(orderId);
 
+            //카프카 호출 지점.
+            //confirm완료 후에만 보내기로 하자. pending처리 후에도 보내주기. 결제는 문제 없으니까,
+            //pending도 카프카 진행하기로 하자. pending은 추후 매뉴얼로 처리해주기로 하자.
+
+            Order order = orderRepository.findById(orderId).orElseThrow(
+                    () -> new RuntimeException("해당하는 주문번호가 없어요.")
+            );
+
+            List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(orderId);
+
+            orderEventProducer.sendOrderConfirmed(OrderConfirmedEvent.createOrderConfirmedEvent(order, orderItems));
+            //여기서 카프카 전송은 book서버가 아니라, point delivery bestseller다. order2서버에서 진행되는 이벤트 전송은 이것과 다르다. 그건 book2서버에도 전송하기 때문.
         } catch (Exception e) {
 
             pending(orderId);
+            //카프카 호출 지점.
 
         }
 
     }
 
-//========================================================아래는 토스 관련
 
 
-    public boolean beforeConfirmApi(ConfirmPaymentRequestDTO confirmPaymentRequestDTO) {
-        //토스로 confirmAPI를 호출하기 전에 서버 내에서 이 주문이 요청한 주문이 맞는지 검증한다.
 
-        String orderId = confirmPaymentRequestDTO.getOrderId();
 
-        Order order = orderRepository.findById(Long.parseLong(orderId)).orElseThrow(
-                () -> new RuntimeException("잘못된 주문번호입니다.")
-        );
-
-        order.setPaymentKey(confirmPaymentRequestDTO.getPaymentKey());
-
-        Long totalPrice = order.getTotalPrice();
-        Long requestAmount = confirmPaymentRequestDTO.getAmount();
-
-        return totalPrice.equals(requestAmount);
-
-    }
-
-    public ResponseEntity<String> confirmPayment(String paymentKey, String orderId, Long amount) {
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        String url = "https://api.tosspayments.com/v1/payments/confirm";
-
-        // 1) 시크릿키를 Authorization 헤더로 넣기
-        String auth = Base64.getEncoder()
-                .encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Basic " + auth);
-
-        // 2) body (토스 confirm 규격)
-        TossConfirmRequestDTO body = new TossConfirmRequestDTO(paymentKey, orderId, amount);
-
-        HttpEntity<TossConfirmRequestDTO> request = new HttpEntity<>(body, headers);
-
-        return restTemplate.postForEntity(url, request, String.class);
-
-    }
-
+////========================================================아래는 토스 관련
+//
+//
+//    public boolean beforeConfirmApi(ConfirmPaymentRequestDTO confirmPaymentRequestDTO) {
+//        //토스로 confirmAPI를 호출하기 전에 서버 내에서 이 주문이 요청한 주문이 맞는지 검증한다.
+//
+//        String orderId = confirmPaymentRequestDTO.getOrderId();
+//
+//        Order order = orderRepository.findById(Long.parseLong(orderId)).orElseThrow(
+//                () -> new RuntimeException("잘못된 주문번호입니다.")
+//        );
+//
+//        order.setPaymentKey(confirmPaymentRequestDTO.getPaymentKey());
+//
+//        Long totalPrice = order.getTotalPrice();
+//        Long requestAmount = confirmPaymentRequestDTO.getAmount();
+//
+//        return totalPrice.equals(requestAmount);
+//
+//    }
+//
+//    public ResponseEntity<String> confirmPayment(String paymentKey, String orderId, Long amount) {
+//
+//        RestTemplate restTemplate = new RestTemplate();
+//
+//        String url = "https://api.tosspayments.com/v1/payments/confirm";
+//
+//        // 1) 시크릿키를 Authorization 헤더로 넣기
+//        String auth = Base64.getEncoder()
+//                .encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
+//        headers.set("Authorization", "Basic " + auth);
+//
+//        // 2) body (토스 confirm 규격)
+//        TossConfirmRequestDTO body = new TossConfirmRequestDTO(paymentKey, orderId, amount);
+//
+//        HttpEntity<TossConfirmRequestDTO> request = new HttpEntity<>(body, headers);
+//
+//        return restTemplate.postForEntity(url, request, String.class);
+//
+//    }
+//
 
     @Transactional
     public void reserve(Long orderId) {

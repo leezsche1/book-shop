@@ -36,6 +36,12 @@
 
       if (!response.ok) {
         // 결제 실패 비즈니스 로직을 구현하세요.
+
+        // **내 예상으론 cancelReserve를 여기서 진행하면 될 것이다.
+        // **참고로 여기는 결제 실패가 아님. 결제정보를 통해 결제는 성공했는데 confirm이 모종의 이유로 실패한 것임.
+        // **즉 fail.html로 리다이렉팅하는 것과는 다른 이유에서 진행된다는 것이다. 이 점 명확하게 이해해야함.
+        // **fail.html로 진행된 order는 사용자가 재시도하던가, 아니면 15분 후에 자동취소하면 된다.
+
         console.log(json);
         window.location.href = `/fail?message=${json.message}&code=${json.code}`;
       }

@@ -1,0 +1,27 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql : true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/order_example
+    username: root
+    password: 1234
+  kafka:
+    bootstrap-servers: 127.0.0.1:9092
+
+toss:
+  secret-key: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
+
+app:
+  kafka:
+    topic:
+      order-confirmed: order-confirmed
+
+
+server:
+  tomcat:
+    accesslog:
+      enabled: true
+      pattern: "%t %a \"%r\" %s %D"

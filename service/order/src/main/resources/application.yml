@@ -8,6 +8,8 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/order_example
     username: root
     password: 1234
+  kafka:
+    bootstrap-servers: 127.0.0.1:9092
 
 toss:
   secret-key: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6

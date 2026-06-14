@@ -9,11 +9,13 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class CreateOrderRequestDTO {
 
-    public Long usePoint;
-    public Long priceAmount;
-    public List<OrderItem> orderItems;
+    private Long usePoint;
+    private Long priceAmount;
+    private List<OrderItem> orderItems;
+    private Long userId;
 
     public CreateOrderDTO toCreateOrderDTO() {
         return new CreateOrderDTO(
@@ -21,7 +23,7 @@ public class CreateOrderRequestDTO {
                         orderItem -> new CreateOrderDTO.OrderItem(
                                 orderItem.getBookId(), orderItem.getQuantity()
                         )
-                ).toList(), this.priceAmount, this.usePoint
+                ).toList(), this.priceAmount, this.usePoint, userId
         );
     }
 
@@ -29,8 +31,8 @@ public class CreateOrderRequestDTO {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class OrderItem{
-        public Long bookId;
-        public Long quantity;
+        private Long bookId;
+        private Long quantity;
     }
 
 }
