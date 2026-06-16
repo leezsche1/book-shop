@@ -111,6 +111,7 @@ public class OrderService {
         }
     }
 
+    @Transactional
     public void confirmOrder(Long orderId) {
         //기존에는 api client를 이용했지만, 이제 카프카를 사용할 것이다.
 
